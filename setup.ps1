@@ -3,6 +3,7 @@
 # 원칙: 기존 파일은 절대 덮어쓰지 않는다 (인증·개인 설정 보존). 없는 것만 추가.
 
 $ErrorActionPreference = 'Stop'
+try { [Console]::OutputEncoding = [Text.Encoding]::UTF8; chcp 65001 > $null } catch {}
 $src = Join-Path $PSScriptRoot 'claude-home'
 $dst = Join-Path $env:USERPROFILE '.claude'
 
