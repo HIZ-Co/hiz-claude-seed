@@ -1,0 +1,38 @@
+{
+  "_note": "HIZ 팀 기본 MCP — 무료/토큰불요 6종. 유료(firecrawl·exa·browserbase·apify 등)는 5/29부터 본인 필요 시 별도 추가. 토큰 자리는 본인 값으로 교체.",
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_PAT_HERE"
+      },
+      "description": "GitHub operations - PRs, issues, repos (본인 PAT 필요)"
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "description": "Persistent memory across sessions (토큰 불요)"
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "description": "Chain-of-thought reasoning (토큰 불요)"
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "description": "Live documentation lookup (토큰 불요)"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "YOUR_PROJECTS_PATH_HERE"],
+      "description": "Filesystem operations (본인 작업 폴더 경로로 교체)"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp", "--browser", "chrome"],
+      "description": "Browser automation and testing (토큰 불요)"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# 혹시라도 끌려들어올 수 있는 비밀/세션 (안전망)
+**/.credentials.json
+**/.env
+**/history.jsonl
+**/projects/
+**/sessions/
+**/shell-snapshots/
+**/node_modules/
