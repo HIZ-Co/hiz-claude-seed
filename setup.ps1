@@ -27,13 +27,29 @@ foreach ($d in 'skills', 'commands', 'agents', 'rules', 'mcp-configs') {
   }
 }
 
-# settings.json: 없을 때만 복사 (기존 설정·권한 보존)
+# settings.json: 기존 설정·권한은 보존하되, 팀 표준 auto mode(defaultMode)가
+# 없으면 그것만 주입한다. (로그인이 먼저라 빈 settings.json이 미리 생겨도 auto mode 보장)
 $st = Join-Path $dst 'settings.json'
 if (-not (Test-Path $st)) {
   Copy-Item (Join-Path $src 'settings.json') $st
-  Write-Host "  [OK] settings.json (신규 설치)" -ForegroundColor Green
+  Write-Host "  [OK] settings.json (신규 설치 - auto mode 포함)" -ForegroundColor Green
 } else {
-  Write-Host "  [보존] settings.json 이미 있음 - 덮어쓰지 않음" -ForegroundColor Yellow
+  try {
+    $cur = Get-Content $st -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($null -eq $cur.permissions) {
+      $cur | Add-Member -NotePropertyName permissions -NotePropertyValue ([pscustomobject]@{}) -Force
+    }
+    if ($null -eq $cur.permissions.defaultMode) {
+      $cur.permissions | Add-Member -NotePropertyName defaultMode -NotePropertyValue 'acceptEdits' -Force
+      $json = $cur | ConvertTo-Json -Depth 30
+      [System.IO.File]::WriteAllText($st, $json, (New-Object System.Text.UTF8Encoding $false))
+      Write-Host "  [수정] settings.json 기존 보존 + auto mode(defaultMode) 주입" -ForegroundColor Green
+    } else {
+      Write-Host "  [보존] settings.json 이미 있음 (auto mode 설정됨)" -ForegroundColor Yellow
+    }
+  } catch {
+    Write-Host "  [경고] settings.json 파싱 실패 - 수동 확인 필요: $st" -ForegroundColor Red
+  }
 }
 
 Write-Host ""

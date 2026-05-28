@@ -28,12 +28,36 @@ for d in skills commands agents rules mcp-configs; do
   fi
 done
 
-# settings.json: 없을 때만 복사 (기존 설정·권한 보존)
+# settings.json: 기존 설정·권한은 보존하되, 팀 표준 auto mode(defaultMode)가
+# 없으면 그것만 주입한다. (로그인이 먼저라 빈 settings.json이 미리 생겨도 auto mode 보장)
 if [ ! -f "$DST/settings.json" ]; then
   cp "$SRC/settings.json" "$DST/settings.json"
-  echo "  [OK] settings.json (신규 설치)"
+  echo "  [OK] settings.json (신규 설치 - auto mode 포함)"
+elif command -v python3 >/dev/null 2>&1; then
+  python3 - "$DST/settings.json" <<'PY'
+import json, sys
+p = sys.argv[1]
+try:
+    with open(p, encoding='utf-8') as f:
+        cfg = json.load(f)
+except Exception:
+    print(f"  [경고] settings.json 파싱 실패 - 수동 확인 필요: {p}")
+    sys.exit(0)
+perm = cfg.get('permissions')
+if not isinstance(perm, dict):
+    perm = {}
+    cfg['permissions'] = perm
+if 'defaultMode' not in perm:
+    perm['defaultMode'] = 'acceptEdits'
+    with open(p, 'w', encoding='utf-8') as f:
+        json.dump(cfg, f, ensure_ascii=False, indent=2)
+    print("  [수정] settings.json 기존 보존 + auto mode(defaultMode) 주입")
+else:
+    print("  [보존] settings.json 이미 있음 (auto mode 설정됨)")
+PY
 else
-  echo "  [보존] settings.json 이미 있음 - 덮어쓰지 않음"
+  echo "  [보존] settings.json 이미 있음 - python3 없어 자동 주입 불가"
+  echo "         수동으로 permissions 안에 \"defaultMode\": \"acceptEdits\" 추가하세요."
 fi
 
 echo ""
