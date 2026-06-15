@@ -32,28 +32,47 @@ done
 # 없으면 그것만 주입한다. (로그인이 먼저라 빈 settings.json이 미리 생겨도 auto mode 보장)
 if [ ! -f "$DST/settings.json" ]; then
   cp "$SRC/settings.json" "$DST/settings.json"
-  echo "  [OK] settings.json (신규 설치 - auto mode 포함)"
+  echo "  [OK] settings.json (신규 설치 - auto mode + 플러그인 포함)"
 elif command -v python3 >/dev/null 2>&1; then
-  python3 - "$DST/settings.json" <<'PY'
+  python3 - "$DST/settings.json" "$SRC/settings.json" <<'PY'
 import json, sys
-p = sys.argv[1]
+dst, src = sys.argv[1], sys.argv[2]
 try:
-    with open(p, encoding='utf-8') as f:
+    with open(dst, encoding='utf-8') as f:
         cfg = json.load(f)
 except Exception:
-    print(f"  [경고] settings.json 파싱 실패 - 수동 확인 필요: {p}")
+    print(f"  [경고] settings.json 파싱 실패 - 수동 확인 필요: {dst}")
     sys.exit(0)
+try:
+    with open(src, encoding='utf-8') as f:
+        seed = json.load(f)
+except Exception:
+    seed = {}
+changed = []
 perm = cfg.get('permissions')
 if not isinstance(perm, dict):
-    perm = {}
-    cfg['permissions'] = perm
+    perm = {}; cfg['permissions'] = perm
 if 'defaultMode' not in perm:
-    perm['defaultMode'] = 'acceptEdits'
-    with open(p, 'w', encoding='utf-8') as f:
+    perm['defaultMode'] = 'acceptEdits'; changed.append('auto mode')
+# 플러그인·마켓플레이스: 기존 키는 절대 건드리지 않고 없는 것만 추가
+ep = cfg.get('enabledPlugins')
+if not isinstance(ep, dict):
+    ep = {}; cfg['enabledPlugins'] = ep
+for k, v in seed.get('enabledPlugins', {}).items():
+    if k not in ep:
+        ep[k] = v; changed.append(k.split('@')[0])
+mk = cfg.get('extraKnownMarketplaces')
+if not isinstance(mk, dict):
+    mk = {}; cfg['extraKnownMarketplaces'] = mk
+for k, v in seed.get('extraKnownMarketplaces', {}).items():
+    if k not in mk:
+        mk[k] = v
+if changed:
+    with open(dst, 'w', encoding='utf-8') as f:
         json.dump(cfg, f, ensure_ascii=False, indent=2)
-    print("  [수정] settings.json 기존 보존 + auto mode(defaultMode) 주입")
+    print("  [수정] settings.json 기존 보존 + 추가: " + ", ".join(changed))
 else:
-    print("  [보존] settings.json 이미 있음 (auto mode 설정됨)")
+    print("  [보존] settings.json 이미 최신 (auto mode + 플러그인 설정됨)")
 PY
 else
   echo "  [보존] settings.json 이미 있음 - python3 없어 자동 주입 불가"
